@@ -19,8 +19,7 @@ async def init_app() -> web.Application:
             "database": "postgres",
             "user": "postgres",
             "password": "password",
-            # "host": "postgres_db",
-            "host": "localhost",
+            "host": "postgres_db",
             "port": "5432",
         }
     }
