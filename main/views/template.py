@@ -27,8 +27,8 @@ async def get_template_by_id(request: web.Request) -> web.json_response:
 
 async def create_template(request: web.Request) -> web.json_response:
     data = await request.json()
-    name = data["name"]
-    config = data["config"]
+    name = data.get("name")
+    config = data.get("config")
     if not name or not config:
         return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
@@ -63,4 +63,4 @@ async def delete_template_by_id(request: web.Request) -> web.json_response:
         cursor = await conn.execute(delete(Template).where(Template.id == template_id))
         if cursor.rowcount == 1:
             return web.json_response({"status": "ok", "data": []}, status=200)
-        return web.json_response({"status": "fail", "reason": f"Workspace {template_id} doesn't exist"}, status=404)
+        return web.json_response({"status": "fail", "reason": f"Template {template_id} doesn't exist"}, status=404)
