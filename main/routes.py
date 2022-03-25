@@ -8,6 +8,8 @@ from main.views.template import (
 from main.views.user import (
     create_new_user_workspace,
     create_user,
+    delete_users_template,
+    delete_users_workspace,
     get_all_users,
     get_user_by_id,
     get_users_templates_for_workspace,
@@ -55,4 +57,16 @@ def setup_routes(app):
         patch_users_template,
         name="get_users_template_by_id_for_workspace",
     )
+    app.router.add_delete(
+        "/user/{user_id}/workspace/{workspace_id}/template/{template_id}",
+        delete_users_template,
+        name="delete_users_template",
+    )
+
+    app.router.add_delete(
+        "/user/{user_id}/workspace/{workspace_id}",
+        delete_users_workspace,
+        name="delete_users_workspace",
+    )
+
     app.router.add_post("/user/{user_id}/workspace", create_new_user_workspace, name="user_new_workspace")
