@@ -29,7 +29,7 @@ class Workspace_Template(Base):
 class User_Workspace(Base):
     __tablename__ = "user_workspace"
     id = Column(Integer, autoincrement=True, primary_key=True)
-    workspace_id = Column(Integer, ForeignKey("workspace.id"), primary_key=True)
+    workspace_id = Column(Integer, ForeignKey("workspace.id", ondelete="CASCADE"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
 
     workspaces = relationship("Workspace", backref=backref("user_workspace", cascade="all, delete-orphan"))
@@ -44,7 +44,7 @@ class User_Workspace_Template(Base):
     __tablename__ = "user_workspace_template"
     id = Column(Integer, autoincrement=True, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    workspace_id = Column(Integer, ForeignKey("workspace.id"), primary_key=True)
+    workspace_id = Column(Integer, ForeignKey("workspace.id", ondelete="CASCADE"), primary_key=True)
     template_id = Column(Integer, ForeignKey("template.id"), primary_key=True)
     config = Column(mutable_json_type(dbtype=JSONB, nested=True))
 
