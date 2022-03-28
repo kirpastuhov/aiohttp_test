@@ -40,7 +40,7 @@ def setup_routes(app):
     app.router.add_patch("/workspace/{workspace_id}", update_workspace_by_id, name="update_workspace_by_id")
     app.router.add_delete("/workspace/{workspace_id}", delete_workspace_by_id, name="delete_workspace_by_id")
 
-    app.router.add_post("/workspace/link_template", link_template, name="link_workspace")
+    app.router.add_post("/workspace/{workspace_id}/link_template", link_template, name="link_workspace")
 
     app.router.add_get("/user", get_all_users, name="get_all_users")
     app.router.add_get("/user/{user_id}", get_user_by_id, name="get_user_by_id")
