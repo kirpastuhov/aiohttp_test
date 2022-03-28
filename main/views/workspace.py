@@ -1,5 +1,6 @@
 from aiohttp import web
-from main.models import Template, Workspace, Workspace_Template
+from main.models import Workspace, Workspace_Template
+from main.views.utils import vaildate_body
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import delete, insert, select, update
 
@@ -26,25 +27,20 @@ async def get_workspace_by_id(request: web.Request) -> web.json_response:
 
 
 async def create_workspace(request: web.Request) -> web.json_response:
-    data = await request.json()
+    data = await vaildate_body(request)
+    if not data or isinstance(data, list):
+        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
     name = data.get("name")
-    if not name:
-        return web.json_response({"status": "fail", "reason": "Name can't be empty"}, status=400)
+    type = data.get("type")
+    if not name or not type:
+        return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         try:
-            cursor = await conn.execute(insert(Workspace).values(name=name))
+            cursor = await conn.execute(insert(Workspace).values(name=name, type=type))
+
             new_workspace = await cursor.fetchone()
 
-            cursor = await conn.execute(select(Template))
-            all_templates = await cursor.fetchall()
-            for template in all_templates:
-                template = dict(template)
-                cursor = await conn.execute(
-                    insert(Workspace_Template).values(
-                        template_id=template["id"], workspace_id=dict(new_workspace)["id"]
-                    )
-                )
             return web.json_response({"status": "ok", "data": dict(new_workspace)}, status=201)
         except UniqueViolation:
             return web.json_response(
@@ -54,15 +50,25 @@ async def create_workspace(request: web.Request) -> web.json_response:
 
 async def update_workspace_by_id(request: web.Request) -> web.json_response:
     workspace_id = request.match_info["workspace_id"]
-    data = await request.json()
-    name = data.get("name")
 
-    if not name:
-        return web.json_response({"status": "fail", "reason": f"Name field is missing"}, status=400)
+    data = await vaildate_body(request)
+    if not data or isinstance(data, list):
+        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+
+    name = data.get("name")
+    type = data.get("type")
+    if not name or not type:
+        return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
-        await conn.execute(update(Workspace).where(Workspace.id == workspace_id).values(name=name))
+        await conn.execute(update(Workspace).where(Workspace.id == workspace_id).values(name=name, type=type))
         cursor = await conn.execute(select(Workspace).where(Workspace.id == workspace_id))
+        if cursor.rowcount == 0:
+            return web.json_response(
+                {"status": "fail", "reason": f"Workspace {workspace_id} doesn't exist"},
+                status=404,
+            )
+
         updated_workspace = await cursor.fetchone()
         return web.json_response({"status": "ok", "data": dict(updated_workspace)}, status=200)
 
@@ -77,10 +83,14 @@ async def delete_workspace_by_id(request: web.Request) -> web.json_response:
 
 
 async def link_template(request: web.Request) -> web.json_response:
-    data = await request.json()
-    workspace_id = data.get("workspace")
-    template_id = data.get("template")
-    if not workspace_id or not template_id:
+    # TODO: Prevent duplicates in Workspace_Template table
+    workspace_id = request.match_info["workspace_id"]
+    data = await vaildate_body(request)
+    if not data or isinstance(data, list):
+        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    template_id = data.get("template_id")
+
+    if not template_id:
         return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
