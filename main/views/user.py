@@ -64,21 +64,28 @@ async def create_new_user_workspace(request: web.Request) -> web.json_response:
     user_id = request.match_info["user_id"]
     data = await request.json()
     name = data.get("name")
+    type = data.get("type")
 
-    if not name or not user_id:
+    if not name or not user_id or not type:
         return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         try:
             cursor = await conn.execute(insert(Workspace).values(name=name))
             new_user_workspace = await cursor.fetchone()
+
             cursor = await conn.execute(
                 insert(User_Workspace).values(user_id=user_id, workspace_id=new_user_workspace.id)
             )
 
-            cursor = await conn.execute(select(Template))
+            cursor = await conn.execute(select(Workspace_Template).join(Workspace).where(Workspace.type == type))
             all_templates = await cursor.fetchall()
-            for template in all_templates:
+
+            template_ids = [x.template_id for x in all_templates]
+
+            cursor = await conn.execute(select(Template).where(Template.id.in_(template_ids)))
+            data = await cursor.fetchall()
+            for template in data:
                 cursor = await conn.execute(
                     insert(User_Workspace_Template).values(
                         user_id=user_id,
