@@ -74,11 +74,13 @@ class Workspace(Base):
     __tablename__ = "workspace"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False, unique=True)
+    type = Column(String(100), nullable=True)
 
     templates = relationship("Template", secondary="workspace_template", viewonly=True)
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, type=None):
         self.name = name
+        self.type = type
 
     def __repr__(self) -> str:
         return f"<Workspace {self.name}>"
