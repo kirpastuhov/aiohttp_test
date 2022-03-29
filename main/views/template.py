@@ -1,7 +1,7 @@
 from json.decoder import JSONDecodeError
 
 from aiohttp import web
-from main.models import Template, Workspace
+from main.models import Template
 from main.views.utils import vaildate_body
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import delete, insert, select, update
