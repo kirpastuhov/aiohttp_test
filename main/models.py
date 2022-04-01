@@ -23,7 +23,7 @@ class Workspace_Template(Base):
         self.template_id = template_id
 
     def __repr__(self):
-        return "<Workspace_Template {}>".format(self.workspace.name + " " + self.template.name)
+        return f"<Workspace_Template {self.workspace.name} {self.template.name}>"
 
 
 class User_Workspace(Base):
@@ -57,14 +57,14 @@ class User_Workspace_Template(Base):
 class Template(Base):
     __tablename__ = "template"
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False, unique=True)
     config = Column(mutable_json_type(dbtype=JSONB, nested=True))
+    type = Column(String(250), nullable=False, unique=True)
 
     workspaces = relationship("Workspace", secondary="workspace_template", viewonly=True)
 
-    def __init__(self, name=None, config=None):
-        self.name = name
+    def __init__(self, config=None, type=None):
         self.config = config
+        self.type = type
 
     def __repr__(self) -> str:
         return f"<Template {self.name}>"
