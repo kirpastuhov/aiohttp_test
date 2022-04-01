@@ -16,8 +16,8 @@ async def get_all_users(request: web.Request) -> web.json_response:
 async def get_user_by_id(request: web.Request) -> web.json_response:
     user_id = request.match_info["user_id"]
 
-    if not user_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "User id should be an int"}, status=400)
+    # if not user_id.isdigit():
+    #     return web.json_response({"status": "fail", "reason": "User id should be an int"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(select(User).where(User.id == user_id))
@@ -33,12 +33,13 @@ async def get_user_by_id(request: web.Request) -> web.json_response:
 async def update_user_by_id(request: web.Request) -> web.json_response:
     user_id = request.match_info["user_id"]
 
-    if not user_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "User id should be an int"}, status=400)
+    data = await request.json()
+    # if not user_id.isdigit():
+    #     return web.json_response({"status": "fail", "reason": "User id should be an int"}, status=400)
 
-    data = await vaildate_body(request)
-    if not data or isinstance(data, list):
-        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    # data = await vaildate_body(request)
+    # if not data or isinstance(data, list):
+    #     return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
     name = data.get("name")
 
     if not name:
@@ -69,9 +70,10 @@ async def delete_user_by_id(request: web.Request) -> web.json_response:
 
 
 async def create_user(request: web.Request) -> web.json_response:
-    data = await vaildate_body(request)
-    if not data or isinstance(data, list):
-        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    data = await request.json()
+    # data = await vaildate_body(request)
+    # if not data or isinstance(data, list):
+    #     return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
 
     name = data.get("name")
     if not name:

@@ -1,9 +1,5 @@
-from json.decoder import JSONDecodeError
-from tempfile import template
-
 from aiohttp import web
 from main.models import Template, Workspace_Template
-from main.views.utils import vaildate_body
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import delete, insert, select, update
 
@@ -18,8 +14,6 @@ async def get_all_templates(request: web.Request) -> web.json_response:
 
 async def get_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
-    if not template_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(select(Template).where(Template.id == template_id))
@@ -33,9 +27,7 @@ async def get_template_by_id(request: web.Request) -> web.json_response:
 
 
 async def create_template(request: web.Request) -> web.json_response:
-    data = await vaildate_body(request)
-    if not data or isinstance(data, list):
-        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    data = await request.json()
 
     config = data.get("config")
     template_type = data.get("type")
@@ -53,12 +45,7 @@ async def create_template(request: web.Request) -> web.json_response:
 
 async def update_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
-    if not template_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
-
-    data = await vaildate_body(request)
-    if not data or isinstance(data, list):
-        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    data = await request.json()
 
     template_type = data.get("type")
     config = data.get("config")
@@ -70,7 +57,7 @@ async def update_template_by_id(request: web.Request) -> web.json_response:
         try:
             await conn.execute(update(Template).where(Template.id == template_id).values(type=template_type, config=config))
         except UniqueViolation:
-            return web.json_response({"status": "fail", "reason": "Template with that type already exists"}, status=400)
+            return web.json_response({"status": "fail", "reason": f"Template with type '{template_type}' already exists"}, status=400)
 
         cursor = await conn.execute(select(Template).where(Template.id == template_id))
         if cursor.rowcount == 0:
@@ -84,8 +71,6 @@ async def update_template_by_id(request: web.Request) -> web.json_response:
 
 async def delete_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
-    if not template_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(delete(Workspace_Template).where(Workspace_Template.template_id == template_id))
