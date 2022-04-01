@@ -88,7 +88,7 @@ async def get_users_workspaces(request: web.Request) -> web.json_response:
         cursor = await conn.execute(select(Workspace).join(User_Workspace).where(User_Workspace.user_id == user_id))
         if cursor.rowcount == 0:
             return web.json_response(
-                {"status": "fail", "reason": f"User doesn't have any workspaces yet"},
+                {"status": "fail", "reason": "User doesn't have any workspaces yet"},
                 status=404,
             )
         data = await cursor.fetchall()
@@ -151,7 +151,7 @@ async def get_users_templates_for_workspace(request: web.Request) -> web.json_re
         )
         if cursor.rowcount == 0:
             return web.json_response(
-                {"status": "fail", "reason": f"User doesn't have any templates yet"},
+                {"status": "fail", "reason": "User doesn't have any templates yet"},
                 status=404,
             )
         data = await cursor.fetchall()
@@ -170,7 +170,7 @@ async def patch_users_template(request: web.Request) -> web.json_response:
     config = data.get("config")
 
     if not config:
-        return web.json_response({"status": "fail", "reason": f"Config field is missing"}, status=400)
+        return web.json_response({"status": "fail", "reason": "Config field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         await conn.execute(
