@@ -1,7 +1,8 @@
 from json.decoder import JSONDecodeError
+from tempfile import template
 
 from aiohttp import web
-from main.models import Template
+from main.models import Template, Workspace_Template
 from main.views.utils import vaildate_body
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import delete, insert, select, update
@@ -17,11 +18,14 @@ async def get_all_templates(request: web.Request) -> web.json_response:
 
 async def get_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
+    if not template_id.isdigit():
+        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
+
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(select(Template).where(Template.id == template_id))
         if cursor.rowcount == 0:
             return web.json_response(
-                {"status": "fail", "reason": f"Workspace {template_id} doesn't exist"},
+                {"status": "fail", "reason": f"Template {template_id} doesn't exist"},
                 status=404,
             )
         record = await cursor.fetchone()
@@ -33,33 +37,41 @@ async def create_template(request: web.Request) -> web.json_response:
     if not data or isinstance(data, list):
         return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
 
-    name = data.get("name")
     config = data.get("config")
-    if not name or not config:
+    template_type = data.get("type")
+    if not config or not template_type:
         return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         try:
-            cursor = await conn.execute(insert(Template).values(name=name, config=config))
+            cursor = await conn.execute(insert(Template).values(config=config, type=template_type))
             new_template = await cursor.fetchone()
             return web.json_response({"status": "ok", "data": dict(new_template)}, status=201)
         except UniqueViolation:
-            return web.json_response({"status": "fail", "reason": "Template with such name already exists"}, status=400)
+            return web.json_response({"status": "fail", "reason": "Template with such type already exists"}, status=400)
 
 
 async def update_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
+    if not template_id.isdigit():
+        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
+
     data = await vaildate_body(request)
     if not data or isinstance(data, list):
         return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
-    name = data.get("name")
+
+    template_type = data.get("type")
     config = data.get("config")
 
-    if not name or not config:
-        return web.json_response({"status": "fail", "reason": f"Some field is missing"}, status=400)
+    if not template_type or not config:
+        return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
-        await conn.execute(update(Template).where(Template.id == template_id).values(name=name, config=config))
+        try:
+            await conn.execute(update(Template).where(Template.id == template_id).values(type=template_type, config=config))
+        except UniqueViolation:
+            return web.json_response({"status": "fail", "reason": "Template with that type already exists"}, status=400)
+
         cursor = await conn.execute(select(Template).where(Template.id == template_id))
         if cursor.rowcount == 0:
             return web.json_response(
@@ -72,7 +84,11 @@ async def update_template_by_id(request: web.Request) -> web.json_response:
 
 async def delete_template_by_id(request: web.Request) -> web.json_response:
     template_id = request.match_info["template_id"]
+    if not template_id.isdigit():
+        return web.json_response({"status": "fail", "reason": "Template id should be an int"}, status=400)
+
     async with request.app["db"].acquire() as conn:
+        cursor = await conn.execute(delete(Workspace_Template).where(Workspace_Template.template_id == template_id))
         cursor = await conn.execute(delete(Template).where(Template.id == template_id))
         if cursor.rowcount == 1:
             return web.json_response({"status": "ok", "data": []}, status=200)
