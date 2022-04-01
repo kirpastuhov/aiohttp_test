@@ -16,19 +16,20 @@ def drop_tables(engine):
 
 def sample_data(engine):
     with Session(engine) as session:
-        workspace_1 = Workspace(name="Office workspace")
-        workspace_2 = Workspace(name="Home workspace")
+        workspace_1 = Workspace(name="Office workspace", type="OW")
+        workspace_2 = Workspace(name="Home workspace", type="HW")
 
-        template_1 = Template(name="Office template", config=[{"key": "value"}])
-        template_2 = Template(name="Home template", config=[{"another_key": "different_value"}])
+        template_1 = Template(config=[{"key": "value"}], type="Office")
+        template_2 = Template(config=[{"another_key": "different_value"}], type="Home")
 
         usr_1 = User(name="John")
         usr_2 = User(name="Alex")
 
-        workspace_template_1 = Workspace_Template(workspace_id=1, template_id=1)
-        workspace_template_2 = Workspace_Template(workspace_id=2, template_id=2)
+        # workspace_template_1 = Workspace_Template(workspace_id=1, template_id=1)
+        # workspace_template_2 = Workspace_Template(workspace_id=2, template_id=2)
 
-        session.add_all([workspace_1, workspace_2, template_1, template_2, usr_1, usr_2, workspace_template_1, workspace_template_2])
+        # session.add_all([workspace_1, workspace_2, template_1, template_2, usr_1, usr_2, workspace_template_1, workspace_template_2])
+        session.add_all([workspace_1, workspace_2, template_1, template_2, usr_1, usr_2])
         session.commit()
 
 
