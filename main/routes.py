@@ -75,6 +75,4 @@ def setup_routes(app):
     )
 
     app.router.add_post("/user/{user_id}/workspace", create_user_workspace, name="user_new_workspace")
-    app.router.add_post(
-        "/user/{user_id}/workspace/{workspace_id}/template", create_user_template, name="user_new_template"
-    )
+    app.router.add_post("/user/{user_id}/workspace/{workspace_id}/template", create_user_template, name="user_new_template")
