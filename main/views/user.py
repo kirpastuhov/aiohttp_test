@@ -38,7 +38,7 @@ async def update_user_by_id(request: web.Request) -> web.json_response:
     name = data.get("name")
 
     if not name:
-        return web.json_response({"status": "fail", "reason": f"Some field is missing"}, status=400)
+        return web.json_response({"status": "fail", "reason": "Some field is missing"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         try:
@@ -48,7 +48,7 @@ async def update_user_by_id(request: web.Request) -> web.json_response:
         cursor = await conn.execute(select(User).where(User.id == user_id))
         if cursor.rowcount == 0:
             return web.json_response(
-                {"status": "fail", "reason": f"Template {user_id} doesn't exist"},
+                {"status": "fail", "reason": f"User with id {user_id} doesn't exist"},
                 status=404,
             )
         updated_user = await cursor.fetchone()
