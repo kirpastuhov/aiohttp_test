@@ -11,7 +11,6 @@ meta = MetaData()
 
 class Workspace_Template(Base):
     __tablename__ = "workspace_template"
-    id = Column(Integer, autoincrement=True, primary_key=True)
     workspace_id = Column(Integer, ForeignKey("workspace.id"), primary_key=True)
     template_id = Column(Integer, ForeignKey("template.id"), primary_key=True)
 
