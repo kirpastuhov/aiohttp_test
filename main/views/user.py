@@ -17,17 +17,51 @@ async def get_user_by_id(request: web.Request) -> web.json_response:
     user_id = request.match_info["user_id"]
 
     if not user_id.isdigit():
-        return web.json_response({"status": "fail", "reason": "ID should be an int"}, status=400)
+        return web.json_response({"status": "fail", "reason": "User id should be an int"}, status=400)
 
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(select(User).where(User.id == user_id))
         if cursor.rowcount == 0:
             return web.json_response(
-                {"status": "fail", "reason": f"Workspace {user_id} doesn't exist"},
+                {"status": "fail", "reason": f"User {user_id} doesn't exist"},
                 status=404,
             )
         record = await cursor.fetchone()
     return web.json_response({"status": "ok", "data": dict(record)})
+
+
+async def update_user_by_id(request: web.Request) -> web.json_response:
+    user_id = request.match_info["user_id"]
+    data = await vaildate_body(request)
+    if not data or isinstance(data, list):
+        return web.json_response({"status": "fail", "reason": "Invalid body"}, status=400)
+    name = data.get("name")
+
+    if not name:
+        return web.json_response({"status": "fail", "reason": f"Some field is missing"}, status=400)
+
+    async with request.app["db"].acquire() as conn:
+        try:
+            await conn.execute(update(User).where(User.id == user_id).values(name=name))
+        except UniqueViolation:
+            return web.json_response({"status": "fail", "reason": "User with such name already exists"}, status=400)
+        cursor = await conn.execute(select(User).where(User.id == user_id))
+        if cursor.rowcount == 0:
+            return web.json_response(
+                {"status": "fail", "reason": f"Template {user_id} doesn't exist"},
+                status=404,
+            )
+        updated_user = await cursor.fetchone()
+        return web.json_response({"status": "ok", "data": dict(updated_user)}, status=200)
+
+
+async def delete_user_by_id(request: web.Request) -> web.json_response:
+    user_id = request.match_info["user_id"]
+    async with request.app["db"].acquire() as conn:
+        cursor = await conn.execute(delete(User).where(User.id == user_id))
+        if cursor.rowcount == 1:
+            return web.json_response({"status": "ok", "data": []}, status=200)
+        return web.json_response({"status": "fail", "reason": f"User {user_id} doesn't exist"}, status=404)
 
 
 async def create_user(request: web.Request) -> web.json_response:
@@ -45,9 +79,7 @@ async def create_user(request: web.Request) -> web.json_response:
             new_workspace = await cursor.fetchone()
             return web.json_response({"status": "ok", "data": dict(new_workspace)}, status=201)
         except UniqueViolation:
-            return web.json_response(
-                {"status": "fail", "reason": "Workspace with such name already exists"}, status=400
-            )
+            return web.json_response({"status": "fail", "reason": "User with such name already exists"}, status=400)
 
 
 async def get_users_workspaces(request: web.Request) -> web.json_response:
