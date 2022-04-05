@@ -1,5 +1,5 @@
 from aiohttp import web
-from main.models import Template, Workspace_Template
+from main.models import Template, User_Workspace_Template, Workspace_Template
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import delete, insert, select, update
 
@@ -55,9 +55,13 @@ async def update_template_by_id(request: web.Request) -> web.json_response:
 
     async with request.app["db"].acquire() as conn:
         try:
-            await conn.execute(update(Template).where(Template.id == template_id).values(type=template_type, config=config))
+            await conn.execute(
+                update(Template).where(Template.id == template_id).values(type=template_type, config=config)
+            )
         except UniqueViolation:
-            return web.json_response({"status": "fail", "reason": f"Template with type '{template_type}' already exists"}, status=400)
+            return web.json_response(
+                {"status": "fail", "reason": f"Template with type '{template_type}' already exists"}, status=400
+            )
 
         cursor = await conn.execute(select(Template).where(Template.id == template_id))
         if cursor.rowcount == 0:
@@ -74,6 +78,9 @@ async def delete_template_by_id(request: web.Request) -> web.json_response:
 
     async with request.app["db"].acquire() as conn:
         cursor = await conn.execute(delete(Workspace_Template).where(Workspace_Template.template_id == template_id))
+        cursor = await conn.execute(
+            delete(User_Workspace_Template).where(User_Workspace_Template.template_id == template_id)
+        )
         cursor = await conn.execute(delete(Template).where(Template.id == template_id))
         if cursor.rowcount == 1:
             return web.json_response({"status": "ok", "data": []}, status=200)
