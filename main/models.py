@@ -57,7 +57,7 @@ class Template(Base):
     __tablename__ = "template"
     id = Column(Integer, primary_key=True)
     config = Column(mutable_json_type(dbtype=JSONB, nested=True))
-    type = Column(String(250), nullable=False, unique=True)
+    type = Column(String(250), nullable=True, unique=True)
 
     workspaces = relationship("Workspace", secondary="workspace_template", viewonly=True)
 
